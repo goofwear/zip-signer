@@ -227,27 +227,26 @@ public class ManageKeysActivity extends AppCompatActivity {
     /* Handles item selections */
     public boolean onOptionsItemSelected(MenuItem item)
     {
-        switch (item.getItemId()) {
-            case R.id.MenuItemRegisterKeystore:
-                launchSelectKeystoreFile();
-                return true;
-            case R.id.MenuItemCreateKeystore:
-                Intent i = new Intent( ManageKeysActivity.this, CreateKeystoreIntroActivity.class);
-                i.putExtra(KeyParameters.REQUEST_CODE, REQUEST_CODE_CREATE_KEYSTORE);
+        int id = item.getItemId();
+        if (id == R.id.MenuItemRegisterKeystore) {
+            launchSelectKeystoreFile();
+            return true;
+        } else if (id == R.id.MenuItemCreateKeystore) {
+            Intent i = new Intent( ManageKeysActivity.this, CreateKeystoreIntroActivity.class);
+            i.putExtra(KeyParameters.REQUEST_CODE, REQUEST_CODE_CREATE_KEYSTORE);
+            startActivity(i);
+            return true;
+        } else if (id == R.id.MenuItemKeysHelp) {
+            if (!helpViewMode) {
+                Intent i = new Intent(this, ManageKeysHelpActivity.class);
                 startActivity(i);
-                return true;
-            case R.id.MenuItemKeysHelp:
-                if (!helpViewMode) {
-                    i = new Intent(this,ManageKeysHelpActivity.class);
-                    startActivity(i);
-                }
-                return true;
-            case R.id.MenuItemWebsite:
-                String targetURL = getString(R.string.MyKeysWebPage);
-                Intent wsi = new Intent( Intent.ACTION_VIEW, Uri.parse(targetURL));
-                startActivity(wsi);
-                return true;
-
+            }
+            return true;
+        } else if (id == R.id.MenuItemWebsite) {
+            String targetURL = getString(R.string.MyKeysWebPage);
+            Intent wsi = new Intent( Intent.ACTION_VIEW, Uri.parse(targetURL));
+            startActivity(wsi);
+            return true;
         }
         return false;
     }

@@ -16,6 +16,7 @@
 package kellinwood.zipsigner2;
 
 import androidx.appcompat.app.AppCompatActivity;
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -280,19 +281,17 @@ public class ZipPickerActivity extends AppCompatActivity {
     /* Handles item selections */
     public boolean onOptionsItemSelected(MenuItem item) 
     {
-        switch (item.getItemId()) {
-        case R.id.MenuItemShowHelp:
+        int id = item.getItemId();
+        if (id == R.id.MenuItemShowHelp) {
             String targetURL = getString(R.string.AboutZipSignerDocUrl);
             Intent wsi = new Intent( Intent.ACTION_VIEW, Uri.parse(targetURL));
             startActivity(wsi);
             return true;
-        case R.id.MenuItemManageKeys:
-            // Launch the ZipSignerActivity to perform the signature operation.
+        } else if (id == R.id.MenuItemManageKeys) {
             Intent mki = new Intent("kellinwood.zipsigner.action.MANAGE_KEYS");
-            // Activity is started and the result is returned via a call to onActivityResult(), below.
-            startActivityForResult(mki, REQUEST_CODE_MANAGE_KEYS);            
+            startActivityForResult(mki, REQUEST_CODE_MANAGE_KEYS);
             return true;
-        case R.id.MenuItemAbout:
+        } else if (id == R.id.MenuItemAbout) {
             AboutDialog.show(this);
             return true;
         }
