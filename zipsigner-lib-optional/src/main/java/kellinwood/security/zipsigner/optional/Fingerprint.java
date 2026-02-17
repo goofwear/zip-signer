@@ -2,67 +2,53 @@ package kellinwood.security.zipsigner.optional;
 
 import kellinwood.logging.Logger;
 import kellinwood.security.zipsigner.Base64;
-import org.spongycastle.util.encoders.HexTranslator;
 
 import java.security.MessageDigest;
 
 /**
- * User: ken
- * Date: 1/17/13
+ * Updated: removed org.spongycastle.util.encoders.HexTranslator dependency —
+ * replaced with standard Java hex encoding (no external library needed).
  */
 public class Fingerprint {
 
     static Logger logger = Logger.getLogger(Fingerprint.class);
 
-    static byte[] calcDigest( String algorithm, byte[] encodedCert) {
-        byte[] result = null;
+    static byte[] calcDigest(String algorithm, byte[] encodedCert) {
         try {
-            MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
-            messageDigest.update(encodedCert);
-            result = messageDigest.digest();
+            MessageDigest md = MessageDigest.getInstance(algorithm);
+            md.update(encodedCert);
+            return md.digest();
         } catch (Exception x) {
-            logger.error(x.getMessage(),x);
+            logger.error(x.getMessage(), x);
+            return null;
         }
-        return result;
     }
 
-    public static String hexFingerprint( String algorithm, byte[] encodedCert) {
+    /** Returns a colon-separated uppercase hex fingerprint, e.g. "AB:CD:EF:..." */
+    public static String hexFingerprint(String algorithm, byte[] encodedCert) {
         try {
-            byte[] digest = calcDigest(algorithm,encodedCert);
+            byte[] digest = calcDigest(algorithm, encodedCert);
             if (digest == null) return null;
-            HexTranslator hexTranslator = new HexTranslator();
-            byte[] hex = new byte[digest.length * 2];
-            hexTranslator.encode(digest, 0, digest.length, hex, 0);
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < hex.length; i += 2) {
-                builder.append((char)hex[i]);
-                builder.append((char)hex[i+1]);
-                if (i != (hex.length - 2)) builder.append(':');
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < digest.length; i++) {
+                sb.append(String.format("%02X", digest[i] & 0xff));
+                if (i != digest.length - 1) sb.append(':');
             }
-            return builder.toString().toUpperCase();
+            return sb.toString();
         } catch (Exception x) {
-            logger.error(x.getMessage(),x);
+            logger.error(x.getMessage(), x);
+            return null;
         }
-        return null;
     }
 
-//    public static void main(String[] args) {
-//        byte[] data = "The Silence of the Lambs is a really good movie.".getBytes();
-//        System.out.println(hexFingerprint("MD5", data));
-//        System.out.println(hexFingerprint("SHA1", data));
-//        System.out.println(base64Fingerprint("SHA1", data));
-//
-//    }
-
-    public static String base64Fingerprint( String algorithm, byte[] encodedCert) {
-        String result = null;
+    public static String base64Fingerprint(String algorithm, byte[] encodedCert) {
         try {
-            byte[] digest = calcDigest(algorithm,encodedCert);
-            if (digest == null) return result;
+            byte[] digest = calcDigest(algorithm, encodedCert);
+            if (digest == null) return null;
             return Base64.encode(digest);
         } catch (Exception x) {
-            logger.error(x.getMessage(),x);
+            logger.error(x.getMessage(), x);
+            return null;
         }
-        return result;
     }
 }

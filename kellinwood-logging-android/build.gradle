@@ -13,7 +13,8 @@ group   = 'kellinwood.android'
 
 dependencies {
     implementation project(':kellinwood-logging-lib')
-    // Use modern Android stubs instead of the old com.google.android:android artifact
+    // Android stubs for compiling the Android-API-referencing logging code.
+    // compileOnly: the real android.jar is provided by the SDK at link time in ZipSigner.
     compileOnly 'com.google.android:android:4.1.1.4'
     testImplementation 'junit:junit:4.13.2'
 }

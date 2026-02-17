@@ -162,7 +162,7 @@ public class Main
 
             KeyStoreFileManager.setProvider( bcProvider);
 
-            signer.loadProvider( "org.spongycastle.jce.provider.BouncyCastleProvider");
+            signer.loadProvider( "org.bouncycastle.jce.provider.BouncyCastleProvider");
 
 
             PrivateKey privateKey = null;            
