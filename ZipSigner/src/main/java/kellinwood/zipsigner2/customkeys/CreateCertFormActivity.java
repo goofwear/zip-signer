@@ -1,6 +1,6 @@
 package kellinwood.zipsigner2.customkeys;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -23,7 +23,7 @@ import kellinwood.security.zipsigner.optional.PasswordObfuscator;
 import kellinwood.zipsigner2.AlertDialogUtil;
 import kellinwood.zipsigner2.R;
 
-public class CreateCertFormActivity extends Activity {
+public class CreateCertFormActivity extends AppCompatActivity {
 
     AndroidLogger logger = null;
 

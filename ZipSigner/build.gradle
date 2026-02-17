@@ -1,67 +1,61 @@
-
-buildscript {
-    repositories {
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.2'
-    }
+plugins {
+    id 'com.android.application'
 }
 
-apply plugin: 'com.android.application'
-
-
 android {
-    compileSdkVersion 28
+    namespace 'kellinwood.zipsigner2'
+    compileSdk 35
 
-    buildTypes {
-        release {
-            // Enables code shrinking, obfuscation, and optimization for only
-            // your project's release build type.
-            minifyEnabled true
-
-            // Enables resource shrinking, which is performed by the
-            // Android Gradle plugin.
-            shrinkResources true
-
-            // Includes the default ProGuard rules files that are packaged with
-            // the Android Gradle plugin. To learn more, go to the section about
-            // R8 configuration files.
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    defaultConfig {
+        applicationId 'kellinwood.zipsigner2'
+        
+        // Updated minimum SDK to Android 7.0 (Nougat)
+        minSdk 24
+        
+        // Target latest Android version
+        targetSdk 35
+        
+        versionCode Integer.valueOf(project.property('ZipSigner.versionCode'))
+        versionName project.property('ZipSigner.version')
+        
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        vectorDrawables {
+            useSupportLibrary true
         }
     }
 
-
-    defaultConfig {
-
-        /**
-         * applicationId uniquely identifies the package for publishing.
-         * However, your source code should still reference the package name
-         * defined by the package attribute in the main/AndroidManifest.xml file.
-         */
-
-        applicationId 'kellinwood.zipsigner2'
-
-        // Defines the minimum API level required to run the app.
-        minSdkVersion 14
-
-        // Specifies the API level used to test the app.
-        targetSdkVersion 28
-
-        // Defines the version number of your app.
-        versionCode Integer.valueOf(project.property('ZipSigner.versionCode'))
-
-        // Defines a user-friendly version name for your app.
-        versionName project.property('ZipSigner.version')
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+        }
     }
 
-}
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 
-repositories {
-    google()
-    jcenter()
-    mavenLocal()
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+    
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+    
+    packaging {
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}']
+        }
+    }
 }
 
 dependencies {
@@ -71,7 +65,24 @@ dependencies {
     implementation project(':zipio-lib')
     implementation project(':zipsigner-lib')
     implementation project(':zipsigner-lib-optional')
-    implementation 'org.bouncycastle:bcprov-jdk16:1.46'
-    implementation 'com.madgag:scpkix-jdk15on:1.47.0.2'
-    implementation 'com.android.support:appcompat-v7:28.0.0'
+    
+    // Updated BouncyCastle to latest compatible versions
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    
+    // AndroidX libraries (migrated from old support libraries)
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.activity:activity:1.9.3'
+    
+    // Lifecycle components
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
+    
+    // Testing dependencies
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }

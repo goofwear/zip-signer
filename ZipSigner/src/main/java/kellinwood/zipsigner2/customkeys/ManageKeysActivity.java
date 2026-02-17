@@ -15,7 +15,7 @@
  */
 package kellinwood.zipsigner2.customkeys;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -51,7 +51,7 @@ import kellinwood.zipsigner2.ZipPickerActivity;
 
 /* Work with Keystore files, keys, and passwords.
  */
-public class ManageKeysActivity extends Activity {
+public class ManageKeysActivity extends AppCompatActivity {
 
     // Codes used for inter-thread messaging
     static final int MESSAGE_CODE_LOAD_KEYSTORE_PASSWORD = 1;   

@@ -1,6 +1,6 @@
 package kellinwood.zipsigner2.customkeys;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -17,7 +17,7 @@ import kellinwood.security.zipsigner.optional.PasswordObfuscator;
 import kellinwood.zipsigner2.AlertDialogUtil;
 import kellinwood.zipsigner2.R;
 
-public class CreateKeyFormActivity extends Activity {
+public class CreateKeyFormActivity extends AppCompatActivity {
 
     AndroidLogger logger = null;
 

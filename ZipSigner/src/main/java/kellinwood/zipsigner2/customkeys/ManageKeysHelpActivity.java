@@ -1,6 +1,6 @@
 package kellinwood.zipsigner2.customkeys;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -10,7 +10,7 @@ import kellinwood.logging.android.AndroidLogManager;
 import kellinwood.logging.android.AndroidLogger;
 import kellinwood.zipsigner2.R;
 
-public class ManageKeysHelpActivity extends Activity {
+public class ManageKeysHelpActivity extends AppCompatActivity {
 
     AndroidLogger logger = null;
 

@@ -1,6 +1,6 @@
 package kellinwood.zipsigner2.customkeys;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.ClipboardManager;
@@ -28,7 +28,7 @@ import kellinwood.security.zipsigner.optional.Fingerprint;
 import kellinwood.security.zipsigner.optional.KeyStoreFileManager;
 import kellinwood.zipsigner2.R;
 
-public class KeysPropertiesActivity extends Activity {
+public class KeysPropertiesActivity extends AppCompatActivity {
 
     AndroidLogger logger = null;
 

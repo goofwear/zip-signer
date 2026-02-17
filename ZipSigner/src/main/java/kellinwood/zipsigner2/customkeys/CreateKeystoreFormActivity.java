@@ -1,6 +1,6 @@
 package kellinwood.zipsigner2.customkeys;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
@@ -24,7 +24,7 @@ import kellinwood.zipsigner2.AlertDialogUtil;
 import kellinwood.zipsigner2.R;
 import kellinwood.zipsigner2.filebrowser.AndroidFileBrowser;
 
-public class CreateKeystoreFormActivity extends Activity {
+public class CreateKeystoreFormActivity extends AppCompatActivity {
 
     AndroidLogger logger = null;
     String extStorageDir = "/";

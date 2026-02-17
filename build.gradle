@@ -1,16 +1,30 @@
-subprojects {
-
+// Top-level build file with configuration options common to all sub-projects/modules.
+buildscript {
     repositories {
-        mavenLocal()
         google()
-        jcenter()
+        mavenCentral()
     }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.7.3'
+    }
+}
 
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
+subprojects {
     if (name != 'ZipSigner') {
         apply plugin: 'java'
 
-        sourceCompatibility = project.property('source.compatibility')
-        targetCompatibility = project.property('target.compatibility')
+        java {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
 
         if (!["zipsigner-cmdline", "convert-keystore"].contains(name)) {
             apply plugin: 'maven-publish'
@@ -25,4 +39,8 @@ subprojects {
             }
         }
     }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.buildDir
 }

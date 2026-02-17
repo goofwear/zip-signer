@@ -15,7 +15,7 @@
  */
 package kellinwood.zipsigner2;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -48,7 +48,7 @@ import kellinwood.security.zipsigner.ZipSigner;
  *  how to invoke the ZipSignerActivity to perform the actual work.
  *  
  */
-public class ZipPickerActivity extends Activity {
+public class ZipPickerActivity extends AppCompatActivity {
 
 
     protected static final int REQUEST_CODE_PICK_FILE_TO_OPEN = 1;

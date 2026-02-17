@@ -15,7 +15,7 @@
  */
 package kellinwood.zipsigner2;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -47,7 +47,7 @@ import kellinwood.zipsigner2.customkeys.Keystore;
 
 
 /** Demo app for signing zip, apk, and/or jar files on an Android device. */
-public class ZipSignerActivity extends Activity {
+public class ZipSignerActivity extends AppCompatActivity {
 
 
     AndroidLogger logger = null;
