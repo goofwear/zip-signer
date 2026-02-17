@@ -84,9 +84,31 @@ public class ZipPickerActivity extends AppCompatActivity {
         setContentView(R.layout.zip_picker);
 
         logger = AndroidLogManager.getAndroidLogger(ZipPickerActivity.class);
-        // enable toasts for info level logging.  toasts are default for error and warnings.
         logger.setToastContext(getBaseContext());
         logger.setInfoToastEnabled(true);
+
+        // Request storage permission on Android 11+ so the file browser can list files.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            if (!android.os.Environment.isExternalStorageManager()) {
+                try {
+                    android.content.Intent intent = new android.content.Intent(
+                            android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                            android.net.Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    android.content.Intent intent = new android.content.Intent(
+                            android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivity(intent);
+                }
+            }
+        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{
+                        android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            }
+        }
 
         Button createButton = (Button)findViewById(R.id.SignButton);
         createButton.setOnClickListener( new OnClickListener() {
@@ -403,20 +425,38 @@ public class ZipPickerActivity extends AppCompatActivity {
 
     }
 
-    public static void launchFileBrowser( Activity parentActivity, String reason, int requestCode, String samplePath)
-    {
-        try
-        {
-            String startPath = "/";
-            String inf = samplePath;
-            if (inf != null && inf.length() > 0) {
-                File f = new File( samplePath);
-                startPath = f.getParent();
+    public static void launchFileBrowser(Activity parentActivity, String reason, int requestCode, String samplePath) {
+        try {
+            String startPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+            if (samplePath != null && samplePath.length() > 0) {
+                File f = new File(samplePath);
+                String parent = f.getParent();
+                if (parent != null) startPath = parent;
             }
-
             Intent intent = new Intent("kellinwood.zipsigner.action.BROWSE_FILE");
             intent.putExtra("startPath", startPath);
             intent.putExtra("reason", reason);
+            parentActivity.startActivityForResult(intent, requestCode);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(parentActivity, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public static void launchFileBrowserSaveMode(Activity parentActivity, String reason, int requestCode, String samplePath) {
+        try {
+            String startPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+            String defaultFilename = "signed.zip";
+            if (samplePath != null && samplePath.length() > 0) {
+                File f = new File(samplePath);
+                String parent = f.getParent();
+                if (parent != null) startPath = parent;
+                defaultFilename = f.getName();
+            }
+            Intent intent = new Intent("kellinwood.zipsigner.action.BROWSE_FILE");
+            intent.putExtra("startPath", startPath);
+            intent.putExtra("reason", reason);
+            intent.putExtra("saveMode", true);
+            intent.putExtra("defaultFilename", defaultFilename);
             parentActivity.startActivityForResult(intent, requestCode);
         } catch (ActivityNotFoundException e) {
             Toast.makeText(parentActivity, e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -430,7 +470,7 @@ public class ZipPickerActivity extends AppCompatActivity {
 
 
     private void pickOutputFile() {
-        launchFileBrowser( this, getResources().getString(R.string.BrowserSelectOutput), REQUEST_CODE_PICK_FILE_TO_SAVE, getOutputFilename());
+        launchFileBrowserSaveMode( this, getResources().getString(R.string.BrowserSelectOutput), REQUEST_CODE_PICK_FILE_TO_SAVE, getOutputFilename());
     }
 
     private void pickInputOutputFiles() {

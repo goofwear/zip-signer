@@ -1,14 +1,21 @@
 package kellinwood.zipsigner2.filebrowser;
 
-import android.app.ListActivity;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,242 +25,220 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import kellinwood.zipsigner2.AlertDialogUtil;
 import kellinwood.zipsigner2.R;
 
-/** Based on the Android File Browser 2.0 tutorial and source (http://www.anddev.org/android_filebrowser__v20-t101.html)
- *  Icons obtained from the Tango Icon Gallery (http://tango.freedesktop.org/Tango_Icon_Gallery).
+/**
+ * File/directory browser.
+ * Rewritten to extend AppCompatActivity (was ListActivity) so it respects the app theme.
+ * Added a "SELECT" button for directory mode and an "OUTPUT HERE" button for save mode.
+ * Fixed file listing on Android 11+ (scoped storage).
  */
-public class AndroidFileBrowser extends ListActivity {
+public class AndroidFileBrowser extends AppCompatActivity {
 
-    public static final String DATA_KEY_START_PATH = "startPath";
-    public static final String DATA_KEY_REASON = "reason";
+    public static final String DATA_KEY_START_PATH       = "startPath";
+    public static final String DATA_KEY_REASON           = "reason";
     public static final String DATA_KEY_DIRECTORY_SELECT_MODE = "dirSelect";
+    public static final String DATA_KEY_SAVE_MODE        = "saveMode";
+    public static final String DATA_KEY_DEFAULT_FILENAME = "defaultFilename";
 
-
-    protected static final int SUB_ACTIVITY_REQUEST_CODE = 1337;
-
-    private List<IconifiedText> directoryEntries = new ArrayList<IconifiedText>();
+    private List<IconifiedText> directoryEntries = new ArrayList<>();
     private File currentDirectory = new File("/");
+    private String reason = "";
+    private boolean directorySelectionMode = false;
+    private boolean saveMode = false;
+    private String defaultFilename = "";
+    private ListView listView;
+    private Button selectButton;
+    private TextView pathView;
+    private static final File[] EMPTY = new File[0];
 
-    private String reason = "select a file";
-    private static final File[] emptyDirFiles = new File[0];
-    private Pattern imagePattern;
-    private Pattern audioPattern;
-    private Pattern packagePattern;
-    private Pattern htmlPattern;
+    private Pattern imagePattern, audioPattern, packagePattern, htmlPattern;
 
-    boolean directorySelectionMode = false;
-
-    /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
-        setTheme(android.R.style.Theme_Black);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-        imagePattern = Pattern.compile( getString(R.string.fileEndingImage));
-        audioPattern = Pattern.compile( getString(R.string.fileEndingAudio));
-        packagePattern = Pattern.compile( getString(R.string.fileEndingPackage));
-        htmlPattern = Pattern.compile( getString(R.string.fileEndingWebText));
+        imagePattern   = Pattern.compile(getString(R.string.fileEndingImage));
+        audioPattern   = Pattern.compile(getString(R.string.fileEndingAudio));
+        packagePattern = Pattern.compile(getString(R.string.fileEndingPackage));
+        htmlPattern    = Pattern.compile(getString(R.string.fileEndingWebText));
 
         Intent i = getIntent();
-        String startPath = i.getExtras().getString(DATA_KEY_START_PATH);
-        if (startPath == null) startPath = "/";
-        reason = i.getExtras().getString(DATA_KEY_REASON);
-        if (reason == null) reason = "";
+        Bundle extras = i.getExtras();
+        String startPath = extras != null ? extras.getString(DATA_KEY_START_PATH) : null;
+        if (startPath == null) startPath = "/sdcard";
+        reason = extras != null && extras.getString(DATA_KEY_REASON) != null
+                ? extras.getString(DATA_KEY_REASON) : "";
+        directorySelectionMode = extras != null && extras.getBoolean(DATA_KEY_DIRECTORY_SELECT_MODE, false);
+        saveMode               = extras != null && extras.getBoolean(DATA_KEY_SAVE_MODE, false);
+        defaultFilename        = extras != null && extras.getString(DATA_KEY_DEFAULT_FILENAME) != null
+                ? extras.getString(DATA_KEY_DEFAULT_FILENAME) : "";
 
-        directorySelectionMode = i.getExtras().getBoolean(DATA_KEY_DIRECTORY_SELECT_MODE,false);
+        // Build layout programmatically so we don't need a separate XML
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
 
+        // Current path label
+        pathView = new TextView(this);
+        pathView.setPadding(16, 12, 16, 4);
+        pathView.setTextSize(12);
+        root.addView(pathView);
 
+        // Reason/hint label
+        if (!reason.isEmpty()) {
+            TextView hint = new TextView(this);
+            hint.setText(reason);
+            hint.setPadding(16, 0, 16, 8);
+            hint.setTextSize(12);
+            root.addView(hint);
+        }
+
+        // File list
+        listView = new ListView(this);
+        listView.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        root.addView(listView);
+
+        // Bottom bar: SELECT/OUTPUT HERE button (shown only in dir/save mode)
+        if (directorySelectionMode || saveMode) {
+            LinearLayout bar = new LinearLayout(this);
+            bar.setOrientation(LinearLayout.HORIZONTAL);
+            bar.setPadding(16, 8, 16, 16);
+            bar.setGravity(Gravity.CENTER);
+
+            selectButton = new Button(this);
+            selectButton.setText(saveMode ? "SAVE HERE" : "SELECT THIS FOLDER");
+            selectButton.setOnClickListener(v -> confirmCurrentDirectory());
+            bar.addView(selectButton);
+            root.addView(bar);
+        }
+
+        setContentView(root);
+
+        listView.setOnItemClickListener((av, v, pos, id) -> onItemClick(pos));
 
         browseTo(new File(startPath));
-        if (directoryEntries.size() > 0) this.setSelection(0);
+    }
 
-        if (directorySelectionMode) {
-            ListView lv = getListView();
-
-            lv.setOnItemLongClickListener( new AdapterView.OnItemLongClickListener() {
-                @Override
-                public boolean onItemLongClick(AdapterView<?> av, View v, int pos, long id) {
-                    return onLongListItemClick(v,pos,id);
-                }
-            });
-
-            AlertDialogUtil.alertDialog(this,
-                R.string.BrowserDirectoryModeTitle,
-                R.string.BrowserDirectoryModeMessage,
-                R.string.OkButtonLabel);
+    private void onItemClick(int position) {
+        String selected = directoryEntries.get(position).getText();
+        if (selected.equals(getString(R.string.current_dir))) {
+            if (directorySelectionMode || saveMode) {
+                confirmCurrentDirectory();
+            } else {
+                browseTo(currentDirectory); // refresh
+            }
+        } else if (selected.equals(getString(R.string.up_one_level))) {
+            if (currentDirectory.getParent() != null)
+                browseTo(currentDirectory.getParentFile());
+        } else {
+            File clicked = new File(currentDirectory, selected);
+            browseTo(clicked);
         }
     }
 
-    /**
-     * This function browses to the 
-     * root-directory of the file-system.
-     */
-    private void browseToRoot() {
-        browseTo(new File("/"));
+    private void confirmCurrentDirectory() {
+        String path = currentDirectory.getAbsolutePath();
+        if (saveMode && !defaultFilename.isEmpty()) {
+            path = path + (path.endsWith("/") ? "" : "/") + defaultFilename;
+        }
+        Intent result = new Intent();
+        result.setData(Uri.parse("file://" + path));
+        setResult(RESULT_OK, result);
+        finish();
     }
 
-    /**
-     * This function browses up one level 
-     * according to the field: currentDirectory
-     */
-    private void upOneLevel(){
-        if(this.currentDirectory.getParent() != null)
-            this.browseTo(this.currentDirectory.getParentFile());
-    }
-
-    // Comparator that will order directory entries with folders first, then files, all sorted case-insensitively.
     static class FileSorter implements Comparator<File> {
-
         @Override
         public int compare(File o1, File o2) {
             if (o1.isDirectory() && !o2.isDirectory()) return -1;
-            else if (!o1.isDirectory() && o2.isDirectory()) return 1;
-            else return o1.getName().compareToIgnoreCase(o2.getName());
+            if (!o1.isDirectory() && o2.isDirectory()) return 1;
+            return o1.getName().compareToIgnoreCase(o2.getName());
         }
-        
     }
-    
-    private static FileSorter fileSorter = new FileSorter();
-    
-    private void browseTo(final File aDirectory){
+    private static final FileSorter FILE_SORTER = new FileSorter();
 
-        if (aDirectory.isDirectory()) 
-        {
-            setTitle(aDirectory.getAbsolutePath() + " :: " + getString(R.string.app_name) + " - " + reason);            
-            File[] fileArray = aDirectory.listFiles();
-            if (fileArray == null) fileArray = emptyDirFiles;
-            this.currentDirectory = aDirectory;
-            
-            Set<File> files = new TreeSet<File>( fileSorter);
+    private void browseTo(File target) {
+        if (!target.exists()) {
+            Toast.makeText(this, "Path does not exist: " + target, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (target.isDirectory()) {
+            currentDirectory = target;
+            pathView.setText(target.getAbsolutePath());
+            setTitle(target.getAbsolutePath());
+
+            File[] fileArray = target.listFiles();
+            if (fileArray == null) {
+                // listFiles() returns null if we can't read the directory
+                Toast.makeText(this,
+                        "Cannot read directory — storage permission may be needed",
+                        Toast.LENGTH_LONG).show();
+                fileArray = EMPTY;
+            }
+
+            Set<File> files = new TreeSet<>(FILE_SORTER);
             for (File f : fileArray) files.add(f);
-            fill( files);
-        }
-        else {
-            openFile(aDirectory);
+            fill(files);
+        } else {
+            // It's a file — return it
+            openFile(target);
         }
     }
 
-    private void openFile(File aFile)
-    {
+    private void openFile(File file) {
         try {
-            Intent e = new Intent();
-            e.setData(Uri.parse("file://"+ aFile.getAbsolutePath()));
-            setResult( RESULT_OK, e);
-            finish();            
-        }
-        catch (Exception x) {
-            Toast.makeText(getBaseContext(), x.getClass().getName() + ": " + x.getMessage(), Toast.LENGTH_LONG).show(); 
+            Intent result = new Intent();
+            result.setData(Uri.parse("file://" + file.getAbsolutePath()));
+            setResult(Activity.RESULT_OK, result);
+            finish();
+        } catch (Exception x) {
+            Toast.makeText(this, x.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
     private void fill(Set<File> files) {
-        this.directoryEntries.clear();
+        directoryEntries.clear();
 
-        String currentDirectoryName = currentDirectory.getAbsolutePath();
-        if (!currentDirectoryName.equals("/") && !currentDirectoryName.endsWith("/"))
-        {
-            currentDirectoryName = currentDirectoryName + "/";
-        }
-        int currentDirectoryNameLen = currentDirectoryName.length();
+        String dirPath = currentDirectory.getAbsolutePath();
+        if (!dirPath.endsWith("/")) dirPath += "/";
+        int dirLen = dirPath.length();
 
-        // Add the "." == "current directory"
-        this.directoryEntries.add(new IconifiedText(
-                getString(R.string.current_dir), 
-                getResources().getDrawable(R.drawable.folder)));		
-        // and the ".." == 'Up one level'
-        if(this.currentDirectory.getParent() != null)
-            this.directoryEntries.add(new IconifiedText(
-                    getString(R.string.up_one_level), 
+        // "." = current directory (tap to select in dir/save mode, or refresh)
+        directoryEntries.add(new IconifiedText(
+                getString(R.string.current_dir),
+                getResources().getDrawable(R.drawable.folder)));
+
+        // ".." = up one level
+        if (currentDirectory.getParent() != null)
+            directoryEntries.add(new IconifiedText(
+                    getString(R.string.up_one_level),
                     getResources().getDrawable(R.drawable.uponelevel)));
 
-        Drawable currentIcon = null;
-        for (File currentFile : files) {
-            if (currentFile.getName().startsWith(".")) continue; // ignore hidden files and directories.
-            if (currentFile.isDirectory()) {
-                currentIcon = getResources().getDrawable(R.drawable.folder);
+        for (File f : files) {
+            if (f.getName().startsWith(".")) continue; // skip hidden
+
+            Drawable icon;
+            if (f.isDirectory()) {
+                icon = getResources().getDrawable(R.drawable.folder);
+            } else if (directorySelectionMode || saveMode) {
+                continue; // in dir/save mode, only show folders
+            } else {
+                String name = f.getName().toLowerCase();
+                if      (imagePattern.matcher(name).find())   icon = getResources().getDrawable(R.drawable.image);
+                else if (htmlPattern.matcher(name).find())    icon = getResources().getDrawable(R.drawable.webtext);
+                else if (packagePattern.matcher(name).find()) icon = getResources().getDrawable(R.drawable.packed);
+                else if (audioPattern.matcher(name).find())   icon = getResources().getDrawable(R.drawable.audio);
+                else                                          icon = getResources().getDrawable(R.drawable.text);
             }
-            else if (!directorySelectionMode) {
-                String fileName = currentFile.getName().toLowerCase();
-                /* Determine the Icon to be used, 
-                 * depending on the FileEndings defined in:
-                 * res/values/fileendings.xml. */
-                if (imagePattern.matcher( fileName).find()) {
-                    currentIcon = getResources().getDrawable(R.drawable.image); 
-                }
-                else if (htmlPattern.matcher( fileName).find()) { 
-                    currentIcon = getResources().getDrawable(R.drawable.webtext);
-                }
-                else if (packagePattern.matcher( fileName).find()) { 
-                    currentIcon = getResources().getDrawable(R.drawable.packed);
-                }
-                else if (audioPattern.matcher( fileName).find()) {
-                    currentIcon = getResources().getDrawable(R.drawable.audio);
-                }
-                else{
-                    currentIcon = getResources().getDrawable(R.drawable.text);
-                }				
-            }
-            else continue;
 
-            /* Cut the current-path at the beginning */
-            String currentFileName = currentFile.getAbsolutePath().substring(currentDirectoryNameLen);
-            if (currentFile.isDirectory() && !currentFileName.endsWith("/"))
-                currentFileName = currentFileName + "/";
-            this.directoryEntries.add(new IconifiedText( currentFileName, currentIcon));
-
+            String displayName = f.getAbsolutePath().substring(dirLen);
+            if (f.isDirectory() && !displayName.endsWith("/")) displayName += "/";
+            directoryEntries.add(new IconifiedText(displayName, icon));
         }
 
-        IconifiedTextListAdapter itla = new IconifiedTextListAdapter(this);
-        itla.setListItems(this.directoryEntries);		
-        this.setListAdapter(itla);
+        IconifiedTextListAdapter adapter = new IconifiedTextListAdapter(this);
+        adapter.setListItems(directoryEntries);
+        listView.setAdapter(adapter);
     }
-
-    @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
-        int selectionRowID = position; // (int) this.getSelectedItemPosition();
-        String selectedFileString = this.directoryEntries.get(selectionRowID).getText();
-        if (selectedFileString.equals(getString(R.string.current_dir))) {
-            // Refresh
-            this.browseTo(this.currentDirectory);
-        } else if(selectedFileString.equals(getString(R.string.up_one_level))){
-            this.upOneLevel();
-        } else {
-            File clickedFile = new File( new File(this.currentDirectory.getAbsolutePath()),
-                    this.directoryEntries.get(selectionRowID).getText());
-            if(clickedFile != null)
-                this.browseTo(clickedFile);
-        }
-    }
-
-    protected boolean onLongListItemClick(View v,int position, long id) {
-        int selectionRowID = position; // (int) this.getSelectedItemPosition();
-        String selectedFileString = this.directoryEntries.get(selectionRowID).getText();
-        if (selectedFileString.equals(getString(R.string.current_dir))) {
-            openFile(this.currentDirectory);
-        } else if(selectedFileString.equals(getString(R.string.up_one_level))){
-            // Ignore
-        } else {
-            File clickedFile = new File( new File(this.currentDirectory.getAbsolutePath()),
-                this.directoryEntries.get(selectionRowID).getText());
-            if(clickedFile != null)
-                openFile(clickedFile);
-        }
-        return true;
-    }
-
-    /** Checks whether checkItsEnd ends with 
-     * one of the Strings from fileEndings */
-    private boolean checkEndsWithInStringArray(String checkItsEnd, 
-            String[] fileEndings){
-        for(String aEnd : fileEndings){
-            if(checkItsEnd.endsWith(aEnd))
-                return true;
-        }
-        return false;
-    }
-
-
 }

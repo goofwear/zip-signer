@@ -2,19 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     
-    <!-- Storage permissions for Android 10 and below -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
-    
-    <!-- Required for Android 13+ for media file access -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    
-    <!-- Manage external storage for full file access (requires special permission) -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
     
@@ -38,6 +33,7 @@
             </intent-filter>
         </activity>
         
+        <!-- No android:label so title bar just shows the path via setTitle() -->
         <activity 
             android:name=".ZipSignerActivity"
             android:label="@string/app_name"
@@ -59,9 +55,10 @@
             </intent-filter>
         </activity>
         
+        <!-- File browser: no label, title set dynamically to current path -->
         <activity 
             android:name=".filebrowser.AndroidFileBrowser"
-            android:label="@string/app_name"
+            android:label=""
             android:exported="true">
             <intent-filter>
                 <action android:name="kellinwood.zipsigner.action.BROWSE_FILE" />

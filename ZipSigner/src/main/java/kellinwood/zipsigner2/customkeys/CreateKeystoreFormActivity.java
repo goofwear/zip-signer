@@ -81,7 +81,11 @@ public class CreateKeystoreFormActivity extends AppCompatActivity {
                 try
                 {
                     Intent intent = new Intent("kellinwood.zipsigner.action.BROWSE_FILE");
-                    intent.putExtra(AndroidFileBrowser.DATA_KEY_START_PATH, keystoreFile.getParentFile().getParent());
+                    // Start at external storage root, not at keystoreFile's grandparent (which is "/" on Android 11+)
+                    String startDir = keystoreFile.getParentFile() != null
+                            ? keystoreFile.getParentFile().getAbsolutePath()
+                            : extStorageDir;
+                    intent.putExtra(AndroidFileBrowser.DATA_KEY_START_PATH, startDir);
                     intent.putExtra(AndroidFileBrowser.DATA_KEY_REASON, getResources().getString(R.string.SelectKeystoreDir));
                     intent.putExtra(AndroidFileBrowser.DATA_KEY_DIRECTORY_SELECT_MODE, true);
                     CreateKeystoreFormActivity.this.startActivityForResult(intent, REQUEST_CODE_KEYSTORE_DIR);
