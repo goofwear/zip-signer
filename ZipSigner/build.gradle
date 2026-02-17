@@ -8,18 +8,11 @@ android {
 
     defaultConfig {
         applicationId 'kellinwood.zipsigner2'
-        
-        // Updated minimum SDK to Android 7.0 (Nougat)
         minSdk 24
-        
-        // Target latest Android version
         targetSdk 35
-        
         versionCode Integer.valueOf(project.property('ZipSigner.versionCode'))
         versionName project.property('ZipSigner.version')
-        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        
         vectorDrawables {
             useSupportLibrary true
         }
@@ -45,15 +38,21 @@ android {
         viewBinding true
         buildConfig true
     }
-    
+
     lint {
         abortOnError false
         checkReleaseBuilds false
     }
-    
+
     packaging {
         resources {
-            excludes += ['/META-INF/{AL2.0,LGPL2.1}']
+            excludes += [
+                '/META-INF/{AL2.0,LGPL2.1}',
+                'META-INF/LICENSE',
+                'META-INF/LICENSE.txt',
+                'META-INF/NOTICE',
+                'META-INF/NOTICE.txt',
+            ]
         }
     }
 }
@@ -65,23 +64,19 @@ dependencies {
     implementation project(':zipio-lib')
     implementation project(':zipsigner-lib')
     implementation project(':zipsigner-lib-optional')
-    
-    // Updated BouncyCastle to latest compatible versions
+
+    // Updated BouncyCastle (replaces old bcprov-jdk16 and madgag)
     implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
-    
-    // AndroidX libraries (migrated from old support libraries)
+
+    // AndroidX (migrated from com.android.support:appcompat-v7)
     implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.core:core:1.15.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.activity:activity:1.9.3'
-    
-    // Lifecycle components
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
-    
-    // Testing dependencies
+    implementation 'androidx.lifecycle:lifecycle-runtime:2.8.7'
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'

@@ -2,8 +2,14 @@ plugins {
     id 'application'
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// mainClassName is deprecated in Gradle 8 - use mainClass instead
 application {
-    mainClassName = 'kellinwood.zipsigner.cmdline.Main'
+    mainClass = 'kellinwood.zipsigner.cmdline.Main'
 
     applicationDistribution.into('') {
         from "."
@@ -15,7 +21,7 @@ application {
     startScripts {
         doLast {
             unixScript.text = unixScript.text.replace('\\$APP_HOME', '$APP_HOME')
-            windowsScript.text = windowsScript.text.replace('\\$APP_HOME', '%APP_HOME%') //untested
+            windowsScript.text = windowsScript.text.replace('\\$APP_HOME', '%APP_HOME%')
         }
     }
 }
@@ -28,9 +34,8 @@ dependencies {
     implementation project(':zipio-lib')
     implementation project(':zipsigner-lib')
     implementation project(':zipsigner-lib-optional')
-    implementation 'commons-cli:commons-cli:1.1'
-    implementation 'org.bouncycastle:bcprov-jdk16:1.46'
-    implementation 'log4j:log4j:'+project.property('log4j.version')
-    testImplementation 'junit:junit:4.0'
+    implementation 'commons-cli:commons-cli:1.6.0'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'log4j:log4j:' + project.property('log4j.version')
+    testImplementation 'junit:junit:4.13.2'
 }
-
