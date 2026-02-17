@@ -3,9 +3,16 @@ plugins {
     id 'maven-publish'
 }
 
+// This module bundles sun.misc.* and sun.security.* classes copied from the JDK.
+// Java 9+ module system forbids defining new classes in packages owned by named JDK
+// modules (jdk.unsupported owns sun.misc, java.base owns sun.security.*).
+// Compiling with a Java 8 toolchain bypasses the module system entirely.
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 version = project.property('android-sun-jarsign-support.version')
