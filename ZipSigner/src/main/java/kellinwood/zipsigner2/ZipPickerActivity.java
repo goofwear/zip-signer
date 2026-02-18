@@ -491,7 +491,6 @@ public class ZipPickerActivity extends AppCompatActivity {
     }
 
 
-}
     /**
      * Sign an APK with v2/v3 signatures using a custom key.
      */
