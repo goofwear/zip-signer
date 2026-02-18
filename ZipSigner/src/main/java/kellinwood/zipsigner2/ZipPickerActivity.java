@@ -253,6 +253,20 @@ public class ZipPickerActivity extends AppCompatActivity {
                 return;
             }
 
+            // Check if v2/v3 signing is enabled and input is an APK
+            android.widget.CheckBox v2v3Checkbox = findViewById(R.id.EnableV2V3Checkbox);
+            boolean enableV2V3 = v2v3Checkbox != null && v2v3Checkbox.isChecked();
+            boolean isApk = inputFile.toLowerCase().endsWith(".apk");
+
+            KeyEntry keyEntry = (KeyEntry)((Spinner)this.findViewById(R.id.KeyModeSpinner)).getSelectedItem();
+            
+            // Use modern APK signer for v2/v3 if enabled and it's an APK
+            if (enableV2V3 && isApk && !keyEntry.isBuiltIn()) {
+                signApkWithV2V3(inputFile, outputFile, keyEntry);
+                return;
+            }
+
+            // Otherwise use the old v1-only signing path
             // Launch the ZipSignerActivity to perform the signature operation.
             Intent i = new Intent("kellinwood.zipsigner.action.SIGN_FILE");
 
@@ -264,7 +278,6 @@ public class ZipPickerActivity extends AppCompatActivity {
             // Optional parameters...
 
             // keyMode defaults to "testkey" if not specified
-            KeyEntry keyEntry = (KeyEntry)((Spinner)this.findViewById(R.id.KeyModeSpinner)).getSelectedItem();
             logger.debug(keyEntry.getDisplayName() + ", id="+keyEntry.getId());
             i.putExtra("keyMode", keyEntry.getDisplayName());
 
@@ -478,4 +491,79 @@ public class ZipPickerActivity extends AppCompatActivity {
     }
 
 
+}
+    /**
+     * Sign an APK with v2/v3 signatures using a custom key.
+     */
+    private void signApkWithV2V3(String inputFile, String outputFile, KeyEntry keyEntry) {
+        new Thread(() -> {
+            try {
+                // Get keystore details from database
+                kellinwood.zipsigner2.customkeys.CustomKeysDataSource dataSource = 
+                    new kellinwood.zipsigner2.customkeys.CustomKeysDataSource(this);
+                dataSource.open();
+                kellinwood.zipsigner2.customkeys.Keystore keystore = dataSource.getKeystoreByAliasId(keyEntry.getId());
+                dataSource.close();
+
+                if (keystore == null) {
+                    runOnUiThread(() -> {
+                        android.widget.Toast.makeText(this, "Keystore not found", android.widget.Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
+
+                // Get passwords
+                String keystorePassword = kellinwood.zipsigner2.customkeys.PasswordObfuscator.getInstance()
+                        .unobfuscate(keystore.getObfuscatedPassword(), keystore.getFilename());
+                
+                kellinwood.zipsigner2.customkeys.Alias alias = null;
+                for (kellinwood.zipsigner2.customkeys.Alias a : keystore.getAliases()) {
+                    if (a.getId() == keyEntry.getId()) {
+                        alias = a;
+                        break;
+                    }
+                }
+
+                if (alias == null) {
+                    runOnUiThread(() -> {
+                        android.widget.Toast.makeText(this, "Key alias not found", android.widget.Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
+
+                String keyPassword = alias.getObfuscatedKeyPassword() != null
+                        ? kellinwood.zipsigner2.customkeys.PasswordObfuscator.getInstance()
+                                .unobfuscate(alias.getObfuscatedKeyPassword(), keystore.getFilename())
+                        : keystorePassword;
+
+                // Sign with v1+v2+v3
+                runOnUiThread(() -> {
+                    android.widget.Toast.makeText(this, "Signing with v2/v3...", android.widget.Toast.LENGTH_SHORT).show();
+                });
+
+                ModernApkSigner.sign(
+                        new java.io.File(inputFile),
+                        new java.io.File(outputFile),
+                        new java.io.File(keystore.getFilename()),
+                        keystorePassword,
+                        alias.getName(),
+                        keyPassword
+                );
+
+                runOnUiThread(() -> {
+                    android.widget.Toast.makeText(this, 
+                            "APK signed successfully with v1+v2+v3 signatures!", 
+                            android.widget.Toast.LENGTH_LONG).show();
+                });
+
+            } catch (Exception e) {
+                logger.error("Failed to sign APK with v2/v3", e);
+                runOnUiThread(() -> {
+                    android.widget.Toast.makeText(this, 
+                            "Signing failed: " + e.getMessage(), 
+                            android.widget.Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
 }

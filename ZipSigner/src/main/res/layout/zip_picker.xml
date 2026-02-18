@@ -133,6 +133,16 @@
             </TableRow>
         </TableLayout>
 
+        <CheckBox
+            android:id="@+id/EnableV2V3Checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10sp"
+            android:text="Enable v2/v3 APK signatures (required for API 30+)"
+            android:checked="true"
+            android:textSize="14sp"
+            />
+
         <Button android:text="@string/SignButtonLabel"
                 android:id="@+id/SignButton"
                 android:layout_width="wrap_content"

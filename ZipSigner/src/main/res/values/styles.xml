@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- AppCompat theme required by all activities extending AppCompatActivity -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light">
+    <!-- Main app theme with ActionBar -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    </style>
+    
+    <!-- Theme with no ActionBar for activities that don't need the title bar -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
     </style>
 </resources>
