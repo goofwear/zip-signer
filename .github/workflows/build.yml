@@ -15,17 +15,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Java 8 is required to compile android-sun-jarsign-support (which defines classes
-      # in sun.misc.* / sun.security.* — blocked by Java 9+ module system).
-      # Gradle toolchain support will auto-select it for that module.
-      - name: Set up JDK 8
+      - name: Set up JDK 8 (for android-sun-jarsign-support)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '8'
 
-      # Java 17 is the primary JDK for the Android Gradle Plugin and everything else.
-      # setup-java with multiple versions: the LAST one becomes JAVA_HOME.
       - name: Set up JDK 17 (primary)
         uses: actions/setup-java@v4
         with:
@@ -33,13 +28,28 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Verify Gradle wrapper exists
+        run: |
+          if [ ! -f gradlew ]; then
+            echo "ERROR: gradlew not found!"
+            echo "Please add gradlew, gradlew.bat, and gradle/ directory to your repository."
+            echo "See FIX_GRADLEW_MISSING.txt for instructions."
+            exit 1
+          fi
+          ls -la gradlew
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew :ZipSigner:assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+        run: |
+          ./gradlew :ZipSigner:assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
 
-      - name: Upload build log (always, for debugging)
+      - name: Upload build log (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
